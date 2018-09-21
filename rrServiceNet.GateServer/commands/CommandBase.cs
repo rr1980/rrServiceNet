@@ -1,4 +1,5 @@
-﻿using rrServiceNet.GateServer;
+﻿using rrServiceNet.Common;
+using rrServiceNet.GateServer;
 
 internal abstract class CommandBase
 {

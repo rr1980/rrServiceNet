@@ -1,5 +1,4 @@
-﻿
-
+﻿using rrServiceNet.Common;
 using rrServiceNet.GateServer;
 
 internal class Command_Close : CommandBase

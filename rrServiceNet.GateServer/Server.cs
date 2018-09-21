@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using rrServiceNet.Common;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -9,15 +10,6 @@ using System.Threading;
 
 namespace rrServiceNet.GateServer
 {
-    public class CallPackage
-    {
-        public TcpClient Client { get; set; }
-
-        public string Command { get; set; }
-        public string Data { get; set; }
-        public Guid Guid { get; set; }
-    }
-
     public class NetworkBuffer
     {
         public byte[] WriteBuffer;
@@ -284,6 +276,13 @@ namespace rrServiceNet.GateServer
             }
         }
 
+        public void Call(CallPackage package, TcpClient client)
+        {
+            string json = JsonConvert.SerializeObject(package);
+
+            byte[] _data = Encoding.ASCII.GetBytes(json);
+            SendImmediate(_data, client);
+        }
 
         public void Send(TcpClient client, string data)
         {

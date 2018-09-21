@@ -3,13 +3,15 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27703.2047
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tester", "Tester\Tester.csproj", "{1FB1FE50-4C1F-445A-95C0-8BF4C452B7FD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tester", "Tester\Tester.csproj", "{1FB1FE50-4C1F-445A-95C0-8BF4C452B7FD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "rrServiceNet.TimeService", "rrServiceNet.TimeService\rrServiceNet.TimeService.csproj", "{A66904DD-9318-405C-8952-A737EFE5AD0A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "rrServiceNet.TimeService", "rrServiceNet.TimeService\rrServiceNet.TimeService.csproj", "{A66904DD-9318-405C-8952-A737EFE5AD0A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "rrServiceNet.GateServer", "rrServiceNet.GateServer\rrServiceNet.GateServer.csproj", "{7905DF5D-7E4E-4F9B-9745-795C01194F1E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "rrServiceNet.GateServer", "rrServiceNet.GateServer\rrServiceNet.GateServer.csproj", "{7905DF5D-7E4E-4F9B-9745-795C01194F1E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "rrServiceNet.BaseClient", "rrServiceNet.BaseClient\rrServiceNet.BaseClient.csproj", "{15A6B38F-53D5-4537-B7F2-0138EE7F6FCD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "rrServiceNet.BaseClient", "rrServiceNet.BaseClient\rrServiceNet.BaseClient.csproj", "{15A6B38F-53D5-4537-B7F2-0138EE7F6FCD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "rrServiceNet.Common", "rrServiceNet.Common\rrServiceNet.Common.csproj", "{19CF8CB5-AE6C-49A1-A1FF-F699B2A46FD3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,10 @@ Global
 		{15A6B38F-53D5-4537-B7F2-0138EE7F6FCD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{15A6B38F-53D5-4537-B7F2-0138EE7F6FCD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{15A6B38F-53D5-4537-B7F2-0138EE7F6FCD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{19CF8CB5-AE6C-49A1-A1FF-F699B2A46FD3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{19CF8CB5-AE6C-49A1-A1FF-F699B2A46FD3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{19CF8CB5-AE6C-49A1-A1FF-F699B2A46FD3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{19CF8CB5-AE6C-49A1-A1FF-F699B2A46FD3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

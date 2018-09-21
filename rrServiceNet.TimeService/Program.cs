@@ -1,62 +1,67 @@
-﻿using System;
-using System.Net;
-using System.Net.Sockets;
-using System.Text;
-using System.Threading;
+﻿using rrServiceNet.BaseClient;
+using rrServiceNet.Common;
+using System;
 
 namespace rrServiceNet.TimeService
 {
     class Program
     {
+        static Client client;
+
         static void Main(string[] args)
         {
-            IPAddress ip = IPAddress.Parse("127.0.0.1");
-            int port = 11000;
-            TcpClient client = new TcpClient();
-            client.Connect(ip, port);
-            Console.WriteLine("client connected!!");
-            NetworkStream ns = client.GetStream();
-            Thread thread = new Thread(o => ReceiveData((TcpClient)o));
+            Console.Title = "TimeService";
 
-            thread.Start(client);
+            client = new Client();
 
-            byte[] buffer = Encoding.ASCII.GetBytes("register");
-            ns.Write(buffer, 0, buffer.Length);
+            client.OnDataReceived += Client_OnDataReceived;
+            client.ConnectToServer("127.0.0.1", 11000);
 
-            string s;
-            while (!string.IsNullOrEmpty((s = Console.ReadLine())))
+
+            CallPackage cp = new CallPackage();
+            cp.Command = "register";
+            cp.Data = "timeService";
+
+            cp.Params.Add("commands", new[] { "time", "date" });
+
+            Console.WriteLine(cp.Guid);
+            client.Call(cp);
+
+            string s = "";
+            do
             {
-                buffer = Encoding.ASCII.GetBytes(s);
-                ns.Write(buffer, 0, buffer.Length);
-            }
+                if (s == "call")
+                {
+                    cp = new CallPackage();
+                    cp.Command = "call";
+                    cp.Data = "time";
+                    Console.WriteLine(cp.Guid);
+                    client.Call(cp);
+                }
+                else
+                {
+                    client.Send(s);
+                }
+                Console.Write("command:>");
+            } while ((s = Console.ReadLine()) != "exit");
 
-            client.Client.Shutdown(SocketShutdown.Send);
-            thread.Join();
-            ns.Close();
-            client.Close();
-            Console.WriteLine("disconnect from server!!");
             Console.ReadKey();
         }
 
-        static void ReceiveData(TcpClient client)
+        private static void Client_OnDataReceived(CallPackage response)
         {
-            NetworkStream ns = client.GetStream();
-            byte[] receivedBytes = new byte[1024];
-            int byte_count;
+            Console.WriteLine();
+            Console.WriteLine("+: " + response.Data);
+            Console.Write("command:>");
 
-            while ((byte_count = ns.Read(receivedBytes, 0, receivedBytes.Length)) > 0)
-            {
-                Console.Write(Encoding.ASCII.GetString(receivedBytes, 0, byte_count));
-            }
+            if (response.Command == "call" && response.Data == "time")
+                client.Call(new CallPackage
+                {
+                    Command = "response",
+                    Data = DateTime.Now.ToString(),
+                    Guid = response.Guid
+                });
+
         }
-        //static void Main(string[] args)
-        //{
-        //    AsynchronousClient client = new AsynchronousClient();
-
-        //    client.StartClient();
-
-        //    Console.WriteLine("END");
-        //    Console.ReadLine();
-        //}
     }
 }

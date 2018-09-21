@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using rrServiceNet.Common;
 using System;
 using System.Net.Sockets;
 using System.Text;
@@ -17,7 +18,7 @@ namespace rrServiceNet.BaseClient
         public int CurrentWriteByteCount;
     }
 
-    public delegate void ClientHandlePacketData(string response);
+    public delegate void ClientHandlePacketData(CallPackage response);
 
     /// <summary>
     /// Implements a simple TCP client which connects to a specified server and
@@ -99,7 +100,23 @@ namespace rrServiceNet.BaseClient
                 {
                     //Send off the data for other classes to handle
                     var response = Encoding.ASCII.GetString(buffer.ReadBuffer, 0, bytesRead);
-                    OnDataReceived(response);
+
+                    CallPackage cp = new CallPackage();
+                    cp.Command = "raw";
+                    cp.Data = response;
+
+                    try
+                    {
+                        cp = JsonConvert.DeserializeObject<CallPackage>(response);
+                    }
+                    catch { }
+
+                    cp.Client = tcpClient;
+                    //OnDataReceived(cp);
+
+                    //Send off the data for other classes to handle
+
+                    OnDataReceived(cp);
                 }
 
                 Thread.Sleep(15);

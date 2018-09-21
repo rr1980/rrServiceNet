@@ -1,4 +1,5 @@
 ﻿using rrServiceNet.BaseClient;
+using rrServiceNet.Common;
 using System;
 
 namespace Tester
@@ -7,6 +8,7 @@ namespace Tester
     {
         static void Main(string[] args)
         {
+            Console.Title = "Tester";
 
             Client client = new Client();
 
@@ -27,8 +29,8 @@ namespace Tester
                 if (s == "call")
                 {
                     cp = new CallPackage();
-                    cp.Command = "register";
-                    cp.Data = "timeService";
+                    cp.Command = "call";
+                    cp.Data = "time";
                     Console.WriteLine(cp.Guid);
                     client.Call(cp);
                 }
@@ -42,10 +44,10 @@ namespace Tester
             Console.ReadKey();
         }
 
-        private static void Client_OnDataReceived(string response)
+        private static void Client_OnDataReceived(CallPackage response)
         {
             Console.WriteLine();
-            Console.WriteLine("+: " + response);
+            Console.WriteLine("+: " + response.Data);
             Console.Write("command:>");
         }
     }

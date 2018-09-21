@@ -1,10 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using rrServiceNet.Common;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace rrServiceNet.GateServer
 {
     internal class Controller
     {
-        readonly Dictionary<string, CommandBase> commands = new Dictionary<string, CommandBase>();
+        readonly Dictionary<string[], CommandBase> commands = new Dictionary<string[], CommandBase>();
 
         private Server server;
 
@@ -12,17 +14,24 @@ namespace rrServiceNet.GateServer
         {
             this.server = server;
 
-            commands.Add("raw", new Command_Raw(this, server));
-            commands.Add("register", new Command_Register(this, server));
-            commands.Add("close", new Command_Close(this, server));
+            commands.Add(new[] { "raw" }, new Command_Raw(this, server));
+            commands.Add(new[] { "register", "call", "response" }, new Command_Register(this, server));
+            commands.Add(new[] { "close" }, new Command_Close(this, server));
         }
 
         internal void Handle(CallPackage cp)
         {
-            if (commands.TryGetValue(cp.Command, out var com))
+            var com = commands.FirstOrDefault(x => x.Key.Any(y => y == cp.Command)).Value;
+
+            if (com != null)
             {
                 com.Execute(cp);
             }
+        }
+
+        internal void AddComman(string key)
+        {
+
         }
     }
 }

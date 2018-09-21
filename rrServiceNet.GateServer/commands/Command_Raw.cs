@@ -1,5 +1,6 @@
 ﻿
 
+using rrServiceNet.Common;
 using rrServiceNet.GateServer;
 using System;
 

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using rrServiceNet.Common;
+using System;
 
 namespace rrServiceNet.GateServer
 {
@@ -8,6 +9,8 @@ namespace rrServiceNet.GateServer
         static Controller controller;
         static void Main(string[] args)
         {
+            Console.Title = "GateServer";
+
             server = new Server(11000);
             controller = new Controller(server);
 
