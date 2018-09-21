@@ -11,7 +11,7 @@ namespace rrServiceNet.GateServer
         private Server server;
 
         public Controller(Server server)
-        {
+        { 
             this.server = server;
 
             commands.Add("register", new Command_Register(this, server));
