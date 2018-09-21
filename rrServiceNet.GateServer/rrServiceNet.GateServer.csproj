@@ -5,8 +5,4 @@
     <TargetFramework>netcoreapp2.1</TargetFramework>
   </PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\rrServiceNet.BaseClient\rrServiceNet.BaseClient.csproj" />
-  </ItemGroup>
-
 </Project>
