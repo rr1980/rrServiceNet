@@ -1,7 +1,7 @@
+﻿
 
-
-using System.Net.Sockets;
 using rrServiceNet.GateServer;
+using System;
 
 internal class Command_Register : CommandBase
 {
@@ -9,8 +9,9 @@ internal class Command_Register : CommandBase
     {
     }
 
-    internal override void Execute(TcpClient client, int id, string[] param, string data)
+    internal override void Execute(CallPackage cp)
     {
-        Server.Send(client, "registred with id: " + id);
+        Console.WriteLine(cp.Guid);
+        Server.Send(cp.Client, "registred by server");
     }
 }

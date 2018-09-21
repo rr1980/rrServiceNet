@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
@@ -7,106 +9,313 @@ using System.Threading;
 
 namespace rrServiceNet.GateServer
 {
-    internal class Server
+    public class CallPackage
     {
-        readonly object _lock = new object();
-        readonly Dictionary<int, TcpClient> list_clients = new Dictionary<int, TcpClient>();
-        readonly Controller _controller;
+        public TcpClient Client { get; set; }
 
-        public Server()
+        public string Command { get; set; }
+        public string Data { get; set; }
+        public Guid Guid { get; set; }
+    }
+
+    public class NetworkBuffer
+    {
+        public byte[] WriteBuffer;
+        public byte[] ReadBuffer;
+        public int CurrentWriteByteCount;
+    }
+
+    public delegate void ServerHandlePacketData(CallPackage callPackage);
+
+    /// <summary>
+    /// Implements a simple TCP server which uses one thread per client
+    /// </summary>
+    public class Server
+    {
+        public event ServerHandlePacketData OnDataReceived;
+
+        private TcpListener listener;
+        private ConcurrentDictionary<TcpClient, NetworkBuffer> clientBuffers;
+        private List<TcpClient> clients;
+        private int sendBufferSize = 1024;
+        private int readBufferSize = 1024;
+        private int port;
+        private bool started = false;
+
+        /// <summary>
+        /// The list of currently connected clients
+        /// </summary>
+        public List<TcpClient> Clients
         {
-            _controller = new Controller(this);
-        }
-
-        internal void Start()
-        {
-            int count = 1;
-
-            TcpListener ServerSocket = new TcpListener(IPAddress.Any, 11000);
-            ServerSocket.Start();
-
-            while (true)
+            get
             {
-                TcpClient client = ServerSocket.AcceptTcpClient();
-                lock (_lock) list_clients.Add(count, client);
-                Console.WriteLine("connect...: " + client.Client.LocalEndPoint);
-
-                Thread t = new Thread(handle_clients);
-                t.Start(count);
-                count++;
+                return clients;
             }
         }
 
-        private void handle_clients(object o)
+        /// <summary>
+        /// The number of clients currently connected
+        /// </summary>
+        public int NumClients
         {
-            int id = (int)o;
-            TcpClient client;
-
-            lock (_lock) client = list_clients[id];
-
-            var run = true;
-
-            while (run)
+            get
             {
-                try
-                {
-                    NetworkStream stream = client.GetStream();
-                    byte[] buffer = new byte[1024];
-                    int byte_count = stream.Read(buffer, 0, buffer.Length);
-
-                    if (byte_count == 0)
-                    {
-                        break;
-                    }
-
-                    string data = Encoding.ASCII.GetString(buffer, 0, byte_count);
-
-                    _controller.Handle(client, id, data);
-                }
-                catch (Exception es)
-                {
-                    Console.WriteLine("disconnected...: " + id);
-                    run = false;
-                }
+                return clients.Count;
             }
+        }
 
-            lock (_lock) list_clients.Remove(id);
+        /// <summary>
+        /// Constructs a new TCP server which will listen on a given port
+        /// </summary>
+        /// <param name="port"></param>
+        public Server(int port)
+        {
+            this.port = port;
+            clientBuffers = new ConcurrentDictionary<TcpClient, NetworkBuffer>();
+            clients = new List<TcpClient>();
+        }
+
+        /// <summary>
+        /// Begins listening on the port provided to the constructor
+        /// </summary>
+        public void Start()
+        {
+            listener = new TcpListener(IPAddress.Any, port);
+            Console.WriteLine("Started server on " + listener.LocalEndpoint);
+
+            Thread thread = new Thread(new ThreadStart(ListenForClients));
+            thread.Start();
+            started = true;
+        }
+
+        /// <summary>
+        /// Runs in its own thread. Responsible for accepting new clients and kicking them off into their own thread
+        /// </summary>
+        private void ListenForClients()
+        {
+            listener.Start();
 
             try
             {
-                client.Client.Shutdown(SocketShutdown.Both);
-                client.Close();
+                while (started)
+                {
+                    TcpClient client = listener.AcceptTcpClient();
+                    Thread clientThread = new Thread(new ParameterizedThreadStart(WorkWithClient));
+                    Console.WriteLine("New client connected");
+
+                    NetworkBuffer newBuff = new NetworkBuffer();
+                    newBuff.WriteBuffer = new byte[sendBufferSize];
+                    newBuff.ReadBuffer = new byte[readBufferSize];
+                    newBuff.CurrentWriteByteCount = 0;
+                    clientBuffers.GetOrAdd(client, newBuff);
+                    clients.Add(client);
+
+                    clientThread.Start(client);
+                    Thread.Sleep(15);
+                }
             }
-            catch (Exception es)
+            catch
             {
-                client.Close();
+
             }
         }
 
-        internal void Broadcast(string data)
+        /// <summary>
+        /// Stops the server from accepting new clients
+        /// </summary>
+        public void Stop()
         {
-            byte[] buffer = Encoding.ASCII.GetBytes(data + Environment.NewLine);
-
-            lock (_lock)
+            if (!listener.Pending())
             {
-                foreach (TcpClient c in list_clients.Values)
-                {
-                    NetworkStream stream = c.GetStream();
+                listener.Stop();
+                started = false;
+            }
+        }
 
-                    stream.Write(buffer, 0, buffer.Length);
+        /// <summary>
+        /// This method lives on a thread, one per client. Responsible for reading data from the client
+        /// and pushing the data off to classes listening to the server.
+        /// </summary>
+        /// <param name="client"></param>
+        private void WorkWithClient(object client)
+        {
+            TcpClient tcpClient = client as TcpClient;
+            if (tcpClient == null)
+            {
+                Console.WriteLine("TCP client is null, stopping processing for this client");
+                DisconnectClient(tcpClient);
+                return;
+            }
+
+            NetworkStream clientStream = tcpClient.GetStream();
+            int bytesRead;
+
+            while (started)
+            {
+                bytesRead = 0;
+
+                try
+                {
+                    //blocks until a client sends a message
+                    bytesRead = clientStream.Read(clientBuffers[tcpClient].ReadBuffer, 0, readBufferSize);
+                }
+                catch
+                {
+                    //a socket error has occurred
+                    Console.WriteLine("A socket error has occurred with client: " + tcpClient.ToString());
+                    break;
+                }
+
+                if (bytesRead == 0)
+                {
+                    //the client has disconnected from the server
+                    break;
+                }
+
+                if (OnDataReceived != null)
+                {
+                    //Send off the data for other classes to handle
+                    var response = Encoding.ASCII.GetString(clientBuffers[tcpClient].ReadBuffer, 0, bytesRead);
+
+                    CallPackage cp = new CallPackage();
+                    cp.Command = "raw";
+                    cp.Data = response;
+
+                    try
+                    {
+                        cp = JsonConvert.DeserializeObject<CallPackage>(response);
+                    }
+                    catch { }
+
+                    cp.Client = tcpClient;
+                    OnDataReceived(cp);
+                }
+
+                Thread.Sleep(15);
+            }
+
+            DisconnectClient(tcpClient);
+        }
+
+        /// <summary>
+        /// Removes a given client from our list of clients
+        /// </summary>
+        /// <param name="client"></param>
+        public void DisconnectClient(TcpClient client)
+        {
+            if (client == null)
+            {
+                return;
+            }
+
+            Console.WriteLine("Disconnected client: " + client.ToString());
+
+            client.Close();
+
+            clients.Remove(client);
+            NetworkBuffer buffer;
+            clientBuffers.TryRemove(client, out buffer);
+        }
+
+        /// <summary>
+        /// Adds data to the packet to be sent out, but does not send it across the network
+        /// </summary>
+        /// <param name="data">The data to be sent</param>
+        /// <param name="client">The client to send the data to</param>
+        public void AddToPacket(byte[] data, TcpClient client)
+        {
+            if (clientBuffers[client].CurrentWriteByteCount + data.Length > clientBuffers[client].WriteBuffer.Length)
+            {
+                FlushData(client);
+            }
+
+            Array.ConstrainedCopy(data, 0, clientBuffers[client].WriteBuffer, clientBuffers[client].CurrentWriteByteCount, data.Length);
+
+            clientBuffers[client].CurrentWriteByteCount += data.Length;
+        }
+
+        /// <summary>
+        /// Adds data to the packet to be sent out, but does not send it across the network. This
+        /// data gets sent to every connected client
+        /// </summary>
+        /// <param name="data">The data to be sent</param>
+        public void AddToPacketToAll(byte[] data)
+        {
+            lock (clients)
+            {
+                foreach (TcpClient client in clients)
+                {
+                    if (clientBuffers[client].CurrentWriteByteCount + data.Length > clientBuffers[client].WriteBuffer.Length)
+                    {
+                        FlushData(client);
+                    }
+
+                    Array.ConstrainedCopy(data, 0, clientBuffers[client].WriteBuffer, clientBuffers[client].CurrentWriteByteCount, data.Length);
+
+                    clientBuffers[client].CurrentWriteByteCount += data.Length;
                 }
             }
         }
 
-        internal void Send(TcpClient client, string data)
+        /// <summary>
+        /// Flushes all outgoing data to the specified client
+        /// </summary>
+        /// <param name="client"></param>
+        private void FlushData(TcpClient client)
         {
-            byte[] buffer = Encoding.ASCII.GetBytes(data + Environment.NewLine);
+            client.GetStream().Write(clientBuffers[client].WriteBuffer, 0, clientBuffers[client].CurrentWriteByteCount);
+            client.GetStream().Flush();
+            clientBuffers[client].CurrentWriteByteCount = 0;
+        }
 
-            lock (_lock)
+        /// <summary>
+        /// Flushes all outgoing data to every client
+        /// </summary>
+        private void FlushDataToAll()
+        {
+            lock (clients)
             {
-                NetworkStream stream = client.GetStream();
+                foreach (TcpClient client in clients)
+                {
+                    client.GetStream().Write(clientBuffers[client].WriteBuffer, 0, clientBuffers[client].CurrentWriteByteCount);
+                    client.GetStream().Flush();
+                    clientBuffers[client].CurrentWriteByteCount = 0;
+                }
+            }
+        }
 
-                stream.Write(buffer, 0, buffer.Length);
+
+        public void Send(TcpClient client, string data)
+        {
+            byte[] _data = Encoding.ASCII.GetBytes(data);
+            AddToPacket(_data, client);
+            FlushData(client);
+        }
+
+        /// <summary>
+        /// Sends the byte array data immediately to the specified client
+        /// </summary>
+        /// <param name="data">The data to be sent</param>
+        /// <param name="client">The client to send the data to</param>
+        public void SendImmediate(byte[] data, TcpClient client)
+        {
+            AddToPacket(data, client);
+            FlushData(client);
+        }
+
+        /// <summary>
+        /// Sends the byte array data immediately to all clients
+        /// </summary>
+        /// <param name="data">The data to be sent</param>
+        public void SendImmediateToAll(byte[] data)
+        {
+            lock (clients)
+            {
+                foreach (TcpClient client in clients)
+                {
+                    AddToPacket(data, client);
+                    FlushData(client);
+                }
             }
         }
     }

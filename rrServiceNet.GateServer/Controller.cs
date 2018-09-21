@@ -1,6 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Net.Sockets;
+﻿using System.Collections.Generic;
 
 namespace rrServiceNet.GateServer
 {
@@ -11,25 +9,19 @@ namespace rrServiceNet.GateServer
         private Server server;
 
         public Controller(Server server)
-        { 
-            this.server = server; 
+        {
+            this.server = server;
 
+            commands.Add("raw", new Command_Raw(this, server));
             commands.Add("register", new Command_Register(this, server));
             commands.Add("close", new Command_Close(this, server));
         }
 
-        internal void Handle(TcpClient client, int id, string data)
+        internal void Handle(CallPackage cp)
         {
-            Console.WriteLine(data);
-            var param = data.Split(";");
-
-            if (commands.TryGetValue(param[0], out var com))
+            if (commands.TryGetValue(cp.Command, out var com))
             {
-                com.Execute(client, id, param, data);
-            }
-
-            if (data.StartsWith("register"))
-            {
+                com.Execute(cp);
             }
         }
     }

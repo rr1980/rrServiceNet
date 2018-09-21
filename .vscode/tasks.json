@@ -7,19 +7,19 @@
             "type": "process",
             "args": [
                 "build",
-                "${workspaceFolder}/rrServiceNet.GateServer/rrServiceNet.GateServer.csproj"
+                "${workspaceFolder}"
             ],
             "problemMatcher": "$msCompile"
         },
-        {
-            "label": "build",
-            "command": "dotnet",
-            "type": "process",
-            "args": [
-                "build",
-                "${workspaceFolder}/rrServiceNet.GateServer/rrServiceNet.GateServer.csproj"
-            ],
-            "problemMatcher": "$msCompile"
-        }
+        // {
+        //     "label": "build",
+        //     "command": "dotnet",
+        //     "type": "process",
+        //     "args": [
+        //         "build",
+        //         "${workspaceFolder}/rrServiceNet.GateServer/rrServiceNet.GateServer.csproj"
+        //     ],
+        //     "problemMatcher": "$msCompile"
+        // }
     ]
 }

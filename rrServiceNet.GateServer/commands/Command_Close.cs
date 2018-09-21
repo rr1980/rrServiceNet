@@ -1,6 +1,5 @@
+﻿
 
-
-using System.Net.Sockets;
 using rrServiceNet.GateServer;
 
 internal class Command_Close : CommandBase
@@ -9,11 +8,9 @@ internal class Command_Close : CommandBase
     {
     }
 
-    internal override void Execute(TcpClient client, int id, string[] param, string data)
+    internal override void Execute(CallPackage cp)
     {
-        Server.Send(client, "go exit: " + id);
-
-        client.Client.Shutdown(SocketShutdown.Both);
-        client.Close();
+        Server.Send(cp.Client, "go exit");
+        Server.DisconnectClient(cp.Client);
     }
 }

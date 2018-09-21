@@ -1,7 +1,4 @@
-
-
-using System.Net.Sockets;
-using rrServiceNet.GateServer;
+﻿using rrServiceNet.GateServer;
 
 internal abstract class CommandBase
 {
@@ -14,5 +11,5 @@ internal abstract class CommandBase
         this.Server = server;
     }
 
-    internal abstract void Execute(TcpClient client, int id, string[] param, string data);
+    internal abstract void Execute(CallPackage cp);
 }

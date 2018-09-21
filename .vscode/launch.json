@@ -5,14 +5,26 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": ".NET Core Launch (console)",
+            "name": "Launch Tester",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/Tester/bin/Debug/netcoreapp2.1/Tester.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/Tester",
+            "console": "externalTerminal",
+            "stopAtEntry": false,
+            "internalConsoleOptions": "openOnSessionStart"
+        },
+        {
+            "name": "Launch GateServer",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
             "program": "${workspaceFolder}/rrServiceNet.GateServer/bin/Debug/netcoreapp2.1/rrServiceNet.GateServer.dll",
             "args": [],
             "cwd": "${workspaceFolder}/rrServiceNet.GateServer",
-            "console": "internalConsole",
+            "console": "externalTerminal",
             "stopAtEntry": false,
             "internalConsoleOptions": "openOnSessionStart"
         },
