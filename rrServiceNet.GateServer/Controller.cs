@@ -12,7 +12,7 @@ namespace rrServiceNet.GateServer
 
         public Controller(Server server)
         { 
-            this.server = server;
+            this.server = server; 
 
             commands.Add("register", new Command_Register(this, server));
             commands.Add("close", new Command_Close(this, server));
